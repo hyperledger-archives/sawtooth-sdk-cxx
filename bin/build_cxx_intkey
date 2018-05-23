@@ -21,7 +21,7 @@ set -x
 top_dir=$(cd $(dirname $(dirname $0)) && pwd)
 
 echo -e "\033[0;32m--- Building cxx sdk ---\n\033[0m"
-cd $top_dir/sdk/examples/intkey_cxx
+cd $top_dir/examples/intkey_cxx
 mkdir -p build
 cd build
 # To build with debug symbols use:
