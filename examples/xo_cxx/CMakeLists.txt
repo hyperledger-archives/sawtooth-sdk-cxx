@@ -21,7 +21,7 @@ FILE(GLOB src "*.cpp" "*.h" "*.hpp")
 SOURCE_GROUP("Src" FILES ${src})
 
 # folder used by the core developers
-INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/../../../cxx/include/)
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/../../../include/)
 
 # folder used by the app developers
 INCLUDE_DIRECTORIES(/usr/include/sawtooth_sdk)
@@ -31,7 +31,7 @@ IF( UNIX )
     SET(CMAKE_CXX_FLAGS "-std=c++11" ${CMAKE_CXX_FLAGS})
 ENDIF()
 
-link_directories(${CMAKE_BINARY_DIR}/../../../cxx/build/lib)
+link_directories(${CMAKE_BINARY_DIR}/../../../build/lib)
 
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${src} )

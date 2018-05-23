@@ -17,7 +17,7 @@ PROJECT(sawtooth CXX)
 
 FIND_PACKAGE(Protobuf REQUIRED)
 
-FILE(GLOB protos "../../../protos/*.proto" )
+FILE(GLOB protos "../protos/*.proto" )
 SOURCE_GROUP("Proto" FILES ${src})
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${protos})
 SOURCE_GROUP("Proto-Generated" FILES ${PROTO_SRCS} ${PROTO_HDRS})
