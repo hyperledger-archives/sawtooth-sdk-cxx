@@ -69,13 +69,13 @@ static void CheckIfValidAddr(const std::string& addr) {
 // Checks if a namespace string meets the constraints of a namespace.
 // These are that it is exactly 6 characters long and contains only
 // lowercase hexadecimal characters.
-static void CheckIfValidNamespace(const std::string& namespace) {
-    if (namespace.length() != NAMESPACE_PREFIX_LENGTH) {
+static void CheckIfValidNamespace(const std::string& namespace_) {
+    if (namespace_.length() != NAMESPACE_PREFIX_LENGTH) {
         std::stringstream out;
         out << "Namespace prefix does not contain 6 "
-            << "characters: " << namespace.length() << " != 6";
+            << "characters: " << namespace_.length() << " != 6";
         throw AddressFormatError(out.str());
-    } else if (!IsHex(namespace)) {
+    } else if (!IsHex(namespace_)) {
         throw AddressFormatError("Namespace prefix must contain only " \
             "lowercase hexadecimal characters");
     }
