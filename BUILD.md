@@ -193,3 +193,8 @@ build process. If you'd like to copy it out, you can run the following:
   ```
 
 You can find the .deb package in the root of `sawtooth-sdk-cxx`.
+
+License
+-------
+
+Hyperledger Sawtooth software is licensed under the [Apache License Version 2.0](LICENSE) software license.
