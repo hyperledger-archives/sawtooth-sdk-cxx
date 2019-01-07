@@ -54,8 +54,12 @@ typedef std::shared_ptr<TransactionHeader> TransactionHeaderPtr;
 // The transaction data for a Transaction Processing request.
 class Transaction final {
  public:
-    Transaction(TransactionHeaderPtr header, StringPtr payload, StringPtr signature):
-            header_(header), payload_(payload), signature_(signature) {
+    Transaction(
+            TransactionHeaderPtr header,
+            StringPtr payload,
+            StringPtr signature,
+            StringPtr header_bytes
+    ): header_(header), payload_(payload), signature_(signature), header_bytes_(header_bytes) {
     }
 
     Transaction (const Transaction&) = delete;
@@ -74,10 +78,15 @@ class Transaction final {
         return *(this->signature_);
     }
 
+    const std::string& header_bytes() const {
+        return *(this->header_bytes_);
+    }
+
  private:
     TransactionHeaderPtr header_;
     StringPtr payload_;
     StringPtr signature_;
+    StringPtr header_bytes_;
 };
 typedef std::unique_ptr<Transaction> TransactionUPtr;
 
@@ -184,6 +193,12 @@ typedef std::unique_ptr<TransactionHandler> TransactionHandlerUPtr;
 typedef std::shared_ptr<TransactionHandler> TransactionHandlerPtr;
 
 
+// Used to set the transaction request header style
+enum TpRequestHeaderStyle {
+    HeaderStyleUnset = 1,
+    HeaderStyleExpanded,
+    HeaderStyleRaw
+};
 
 class TransactionProcessor {
 public:
@@ -193,6 +208,9 @@ public:
     // Processor.  All the TransactionHandler objects must be registered
     // before run is called.
     virtual void RegisterHandler(TransactionHandlerUPtr handler) = 0;
+
+    // Sets the TpProcessRequest header style, default set to EXPANDED
+    virtual void SetHeaderStyle(TpRequestHeaderStyle style) = 0;
 
     // The main entry point for the TransactionProcessor. It will not return
     // until the TransactionProcessor shuts down.

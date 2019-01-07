@@ -31,7 +31,8 @@ namespace sawtooth {
 // Note: SdkProtocolVersion is the highest version the SDK supports
 enum class FeatureVersion: uint32_t {
     FeatureUnused = 0,
-    SdkProtocolVersion = 0,
+    FeatureCustomHeaderStyle = 1,
+    SdkProtocolVersion = 1,
 };
 
 static const unsigned int FeatureVersionToUnsignedInt(
@@ -41,9 +42,12 @@ static const unsigned int FeatureVersionToUnsignedInt(
         case FeatureVersion::FeatureUnused:
             value = 0;
             break;
+        case FeatureVersion::FeatureCustomHeaderStyle:
+            value = 1;
+            break;
         // case FeatureVersion::SdkProtocolVersion:
         default:
-            value = 0;
+            value = 1;
     }
     return value;
 }
@@ -59,6 +63,9 @@ class TransactionProcessorImpl: public TransactionProcessor {
     // Processor.  All the TransactionHandler objects must be registered
     // before run is called.
     void RegisterHandler(TransactionHandlerUPtr handler);
+
+    // Sets the TpProcessRequest header style, default set to EXPANDED
+    void SetHeaderStyle(TpRequestHeaderStyle style);
 
     // The main entry point for the TransactionProcessor. It will not return
     // until the TransactionProcessor shuts down.
@@ -78,6 +85,7 @@ class TransactionProcessorImpl: public TransactionProcessor {
 
     std::map<std::string, TransactionHandlerPtr> handlers;
     FeatureVersion highest_sdk_feature_requested;
+    TpRegisterRequest_TpProcessRequestHeaderStyle header_style;
 };
 
 }  // namespace sawtooth

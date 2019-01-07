@@ -62,6 +62,7 @@ TransactionProcessorImpl::TransactionProcessorImpl(
         const std::string& connection_string):
         connection_string(connection_string), run(true) {
     this->highest_sdk_feature_requested = FeatureVersion::FeatureUnused;
+    this->header_style = TpRegisterRequest_TpProcessRequestHeaderStyle_HEADER_STYLE_UNSET;
 }
 
 TransactionProcessorImpl::~TransactionProcessorImpl() {}
@@ -72,6 +73,26 @@ void TransactionProcessorImpl::RegisterHandler(TransactionHandlerUPtr handler) {
     TransactionHandlerPtr sptr(std::move(handler));
     std::string name = sptr->transaction_family_name();
     this->handlers[name] = sptr;
+}
+
+// Sets a flag to request the validator for custom transaction header style
+// in TpProcessRequest
+void TransactionProcessorImpl::SetHeaderStyle(TpRequestHeaderStyle style) {
+    TpRegisterRequest_TpProcessRequestHeaderStyle preferred =
+            TpRegisterRequest_TpProcessRequestHeaderStyle_HEADER_STYLE_UNSET;
+    switch (style) {
+        case HeaderStyleExpanded:
+            preferred = TpRegisterRequest_TpProcessRequestHeaderStyle_EXPANDED;
+            break;
+
+        case HeaderStyleRaw:
+            preferred = TpRegisterRequest_TpProcessRequestHeaderStyle_RAW;
+            break;
+    }
+    this->header_style = preferred;
+    if (FeatureVersion::FeatureCustomHeaderStyle > this->highest_sdk_feature_requested) {
+        this->highest_sdk_feature_requested = FeatureVersion::FeatureCustomHeaderStyle;
+    }
 }
 
 void TransactionProcessorImpl::Register() {
@@ -93,6 +114,7 @@ void TransactionProcessorImpl::Register() {
             for (auto namesp : handler.second->namespaces()) {
                 request.add_namespaces(namesp);
             }
+            request.set_request_header_style(this->header_style);
             FutureMessagePtr future = this->response_stream->SendMessage(
                     Message_MessageType_TP_REGISTER_REQUEST, request);
             TpRegisterResponse response;
@@ -146,10 +168,12 @@ void TransactionProcessorImpl::HandleProcessingRequest(const void* msg,
 
         StringPtr payload_data(request.release_payload());
         StringPtr signature_data(request.release_signature());
+        StringPtr header_bytes(request.release_header_bytes());
 
         TransactionUPtr txn(new Transaction(txnHeaderPtr,
             payload_data,
-            signature_data));
+            signature_data,
+            header_bytes));
 
         auto iter = this->handlers.find(family);
         if (iter != this->handlers.end()) {
