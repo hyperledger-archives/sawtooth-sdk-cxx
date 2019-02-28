@@ -20,6 +20,7 @@
 
 #include <log4cxx/logger.h>
 #include "proto/state_context.pb.h"
+#include "proto/events.pb.h"
 
 #include "sawtooth/global_state.h"
 #include "exceptions.h"
@@ -128,6 +129,35 @@ void GlobalStateImpl::DeleteState(const std::vector<std::string>& addresses) con
         Message::TP_STATE_DELETE_REQUEST, request);
     future->GetMessage(Message::TP_STATE_DELETE_RESPONSE, &response);
 }
+
+
+void GlobalStateImpl::AddEvent(const std::string& event_type ,
+	const std::vector<KeyValue>& kv_pairs , const std::string& event_data) const {
+    Event *event = new Event();
+    event->set_event_type(event_type);
+    for (auto kv : kv_pairs) {
+        Event_Attribute* attr = event->add_attributes();
+        attr->set_key(kv.first);
+        attr->set_value(kv.second);
+    }
+    event->set_data(event_data);
+
+    TpEventAddRequest request;
+    TpEventAddResponse response;
+    request.set_context_id(this->context_id);
+    request.set_allocated_event(event);
+
+    FutureMessagePtr future = this->message_stream->SendMessage(
+        Message::TP_EVENT_ADD_REQUEST, request);
+    future->GetMessage(Message::TP_EVENT_ADD_RESPONSE, &response);
+
+    if(response.status() == TpEventAddResponse::ERROR){
+        std::stringstream error;
+        error << "Failed to add event for Event Type = " << event_type << " ; Event Data = " << event_data;
+        throw sawtooth::InvalidTransaction(error.str());
+    }
+}
+
 
 }  // namespace sawtooth
 
