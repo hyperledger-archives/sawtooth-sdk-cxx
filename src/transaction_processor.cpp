@@ -160,6 +160,7 @@ void TransactionProcessorImpl::HandleProcessingRequest(const void* msg,
                                 << e.what());
                     response.set_status(
                         TpProcessResponse::INVALID_TRANSACTION);
+		    response.set_message(e.what());
                 } catch(...) {
                     LOG4CXX_ERROR(logger, "applicator->Apply unknown error");
                     response.set_status(
