@@ -159,5 +159,27 @@ void GlobalStateImpl::AddEvent(const std::string& event_type ,
 }
 
 
+void GlobalStateImpl::AddReceiptData(const std::string& data) const {
+    TpReceiptAddDataRequest request;
+    TpReceiptAddDataResponse response;
+
+    request.set_context_id(this->context_id);
+    request.set_data(data);
+
+    FutureMessagePtr future = this->message_stream->SendMessage(
+        Message::TP_RECEIPT_ADD_DATA_REQUEST, request);
+    future->GetMessage(Message::TP_RECEIPT_ADD_DATA_RESPONSE, &response);
+
+    if (response.status() == TpReceiptAddDataResponse::ERROR){
+      std::stringstream error;
+      error << "Failed to add receipt data " << data;
+      throw std::runtime_error(error.str());
+    } else if (response.status() == TpReceiptAddDataResponse::STATUS_UNSET){
+      std::stringstream error;
+      error << "Status was not set for TpReceiptAddDataResponse";
+      throw std::runtime_error(error.str());
+    }
+}
+
 }  // namespace sawtooth
 

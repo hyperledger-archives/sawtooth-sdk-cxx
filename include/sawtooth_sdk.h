@@ -124,6 +124,8 @@ class GlobalState {
     virtual void AddEvent(const std::string& event_type,
        const std::vector<KeyValue>& kv_pairs, const std::string& event_data) const = 0;
 
+    // Add receipt data to the execution result of this transaction
+    virtual void AddReceiptData(const std::string& data) const = 0;
 };
 typedef std::shared_ptr<GlobalState> GlobalStatePtr;
 typedef std::unique_ptr<GlobalState> GlobalStateUPtr;

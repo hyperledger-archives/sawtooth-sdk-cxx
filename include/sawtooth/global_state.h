@@ -69,6 +69,9 @@ class GlobalStateImpl: public GlobalState {
     void AddEvent(const std::string& event_type ,
        const std::vector<KeyValue>& kv_pairs, const std::string& event_data) const;
 
+    // Add receipt data to the execution result of this transaction
+    void AddReceiptData(const std::string& data) const;
+
  private:
     std::string context_id;
     MessageStreamPtr message_stream;
