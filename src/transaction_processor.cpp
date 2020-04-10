@@ -61,6 +61,7 @@ static void s_catch_signals (void) {
 TransactionProcessorImpl::TransactionProcessorImpl(
         const std::string& connection_string):
         connection_string(connection_string), run(true) {
+    this->highest_sdk_feature_requested = FeatureVersion::FeatureUnused;
 }
 
 TransactionProcessorImpl::~TransactionProcessorImpl() {}
@@ -78,6 +79,8 @@ void TransactionProcessorImpl::Register() {
         LOG4CXX_DEBUG(logger, "TransactionProcessor::Register: "
             << handler.first);
         auto versions = handler.second->versions();
+        const unsigned int protocol_version =
+                FeatureVersionToUnsignedInt(this->highest_sdk_feature_requested);
 
         for (auto version : versions) {
             LOG4CXX_DEBUG(logger, "Register Handler: "
@@ -86,6 +89,7 @@ void TransactionProcessorImpl::Register() {
             TpRegisterRequest request;
             request.set_family(handler.second->transaction_family_name());
             request.set_version(version);
+            request.set_protocol_version(protocol_version);
             for (auto namesp : handler.second->namespaces()) {
                 request.add_namespaces(namesp);
             }
@@ -98,7 +102,13 @@ void TransactionProcessorImpl::Register() {
             if (response.status() != TpRegisterResponse::OK) {
                 LOG4CXX_ERROR(logger, "Register failed, status code: "
                     << response.status());
-                throw std::runtime_error("Registation failed");
+                throw std::runtime_error("Registration failed");
+            }
+            if (response.protocol_version() != protocol_version) {
+                LOG4CXX_ERROR(logger, "Validator version " << response.protocol_version()
+                    << " does not support requested feature by SDK version "
+                    << protocol_version << ". Unregistering with the validator");
+                throw std::runtime_error("Registration reversed");
             }
         }
     }
