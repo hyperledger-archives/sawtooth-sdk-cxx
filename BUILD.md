@@ -2,7 +2,7 @@ Hyperledger Sawtooth CXX SDK Developer's Setup Guide
 =============
 
 If you are planning to contribute code to the Sawtooth project, please review
-the contributing guide: [CONTRIBUTING.md]
+the contributing guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 Supported operating systems: Ubuntu 16.04 and macOS
 
