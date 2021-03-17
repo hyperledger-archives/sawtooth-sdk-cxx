@@ -174,7 +174,7 @@ void MessageDispatcher::ReceiveMessage() {
             // Encapsulate the message in a ZMQ message and send to the
             // validator
             zmqpp::message message;
-            message.add(msg_data.data(), msg_data.length());
+            message.add(msg_data.data());
             this->server_socket.send(message);
 
             break;
@@ -229,7 +229,7 @@ void MessageDispatcher::HandleConnectionChange(){
         msg.SerializeToString(&msg_data);
 
         zmqpp::message zmsg;
-        zmsg.add(msg_data.data(), msg_data.length());
+        zmsg.add(msg_data.data());
         this->processing_request_socket.send(zmsg);
     }
 }

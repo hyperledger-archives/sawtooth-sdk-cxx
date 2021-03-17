@@ -58,7 +58,7 @@ void MessageStream::Send(Message::MessageType type,
     msg.SerializeToString(&msg_data);
 
     zmqpp::message message;
-    message.add(msg_data.data(), msg_data.length());
+    message.add(msg_data.data());
 
     if (!this->socket) {
         this->socket = std::unique_ptr<zmqpp::socket>(
