@@ -29,6 +29,7 @@
 #include <zmqpp/socket_options.hpp>
 #include <zmq.h>
 
+#undef ERROR
 #include "proto/processor.pb.h"
 #include "proto/network.pb.h"
 
@@ -174,7 +175,7 @@ void MessageDispatcher::ReceiveMessage() {
             // Encapsulate the message in a ZMQ message and send to the
             // validator
             zmqpp::message message;
-            message.add(msg_data.data(), msg_data.length());
+            message.add(msg_data.data());
             this->server_socket.send(message);
 
             break;

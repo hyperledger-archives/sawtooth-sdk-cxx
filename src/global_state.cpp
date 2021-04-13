@@ -20,10 +20,13 @@
 
 #include <log4cxx/logger.h>
 #include "proto/state_context.pb.h"
+#include "proto/client_state.pb.h"
+#include "proto/client_block.pb.h"
 #include "proto/events.pb.h"
 
 #include "sawtooth/global_state.h"
 #include "exceptions.h"
+#undef ERROR
 
 namespace sawtooth {
 
@@ -32,8 +35,8 @@ static log4cxx::LoggerPtr  logger(log4cxx::Logger::getLogger
 
 
 GlobalStateImpl::GlobalStateImpl(
-    const MessageStreamPtr& message_stream, const std::string& context_id):
-    message_stream(message_stream), context_id(context_id) {}
+    const MessageStreamPtr& message_stream, const std::string& context_id, ::google::protobuf::uint64 newTip):
+    message_stream(message_stream), context_id(context_id), tip(newTip) {}
 
 bool GlobalStateImpl::GetState(std::string* out_value, const std::string& address) const {
     std::unordered_map<std::string, std::string> out;
@@ -81,6 +84,66 @@ void GlobalStateImpl::GetState(
             out_values_ref[entry.address()] = entry.data();
         }
     }
+}
+
+void GlobalStateImpl::GetStatesByPrefix(const std::string& address, std::string* root, std::vector<KeyValue>* out_values) const {
+    assert(out_values != nullptr && out_values->size() == 0);
+
+    ClientStateListRequest request;
+    ClientStateListResponse response;
+
+    request.set_state_root(root->empty()? "": root->c_str());
+    request.set_address(address);
+
+    FutureMessagePtr future = this->message_stream->SendMessage(
+        Message::CLIENT_STATE_LIST_REQUEST, request);
+    future->GetMessage(Message::CLIENT_STATE_LIST_RESPONSE, &response);
+
+    if (response.status() == ClientStateListResponse::NO_RESOURCE) {
+        out_values->resize(0);
+        return;
+    }
+
+    if (response.status() != ClientStateListResponse::OK) {
+        std::stringstream error;
+        error << "Failed to retrieve states by prefix";
+        throw sawtooth::InvalidTransaction(error.str());
+    }
+
+    *root = response.paging().next();
+    int num = response.entries_size();
+    out_values->resize(num);
+
+    for (int i = 0; i < num; ++i) {
+        auto const& entry = response.entries(i);
+        auto newKeyValue = KeyValue(entry.address(), entry.data());
+        out_values->at(i).swap(newKeyValue);
+    }
+}
+
+void GlobalStateImpl::GetSigByNum(::google::protobuf::uint64 num, std::string* sig_out) const {
+    assert(sig_out != nullptr);
+
+    ClientBlockGetByNumRequest request;
+    ClientBlockGetResponse response;
+
+    request.set_block_num(num);
+
+    FutureMessagePtr future = this->message_stream->SendMessage(
+        Message::CLIENT_BLOCK_GET_BY_NUM_REQUEST, request);
+    future->GetMessage(Message::CLIENT_BLOCK_GET_RESPONSE, &response);
+
+    if (response.status() != ClientBlockGetResponse::OK) {
+        std::stringstream error;
+        error << "Failed to retrieve block by num";
+        throw sawtooth::InvalidTransaction(error.str());
+    }
+
+    auto const& header_str = response.block().header();
+    BlockHeader header;
+    header.ParseFromString(header_str);
+
+    *sig_out = header.signer_public_key();
 }
 
 void GlobalStateImpl::SetState(const std::string& address, const std::string& value) const {
@@ -158,6 +221,10 @@ void GlobalStateImpl::AddEvent(const std::string& event_type ,
     }
 }
 
+::google::protobuf::uint64 GlobalStateImpl::GetTip() const
+{
+    return tip;
+}
 
 }  // namespace sawtooth
 

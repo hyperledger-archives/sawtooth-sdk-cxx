@@ -24,34 +24,6 @@
 
 namespace sawtooth {
 
-// This is the version used by SDK to match if validator supports feature
-// it requested during registration. It should only be incremented when
-// there are changes in TpRegisterRequest. Remember to sync this
-// information in validator if changed.
-// Note: SdkProtocolVersion is the highest version the SDK supports
-enum class FeatureVersion: uint32_t {
-    FeatureUnused = 0,
-    FeatureCustomHeaderStyle = 1,
-    SdkProtocolVersion = 1,
-};
-
-static const unsigned int FeatureVersionToUnsignedInt(
-        const FeatureVersion& feature_version) {
-    unsigned int value;
-    switch (feature_version) {
-        case FeatureVersion::FeatureUnused:
-            value = 0;
-            break;
-        case FeatureVersion::FeatureCustomHeaderStyle:
-            value = 1;
-            break;
-        // case FeatureVersion::SdkProtocolVersion:
-        default:
-            value = 1;
-    }
-    return value;
-}
-
 // The main processing class for the Sawtooth SDK.
 class TransactionProcessorImpl: public TransactionProcessor {
  public:
@@ -64,12 +36,11 @@ class TransactionProcessorImpl: public TransactionProcessor {
     // before run is called.
     void RegisterHandler(TransactionHandlerUPtr handler);
 
-    // Sets the TpProcessRequest header style, default set to EXPANDED
-    void SetHeaderStyle(TpRequestHeaderStyle style);
-
     // The main entry point for the TransactionProcessor. It will not return
     // until the TransactionProcessor shuts down.
     void Run();
+
+    virtual sawtooth::GlobalStateUPtr CreateContextlessGlobalState();
 
  private:
     void Register();
@@ -84,8 +55,6 @@ class TransactionProcessorImpl: public TransactionProcessor {
     MessageStreamPtr response_stream;
 
     std::map<std::string, TransactionHandlerPtr> handlers;
-    FeatureVersion highest_sdk_feature_requested;
-    TpRegisterRequest_TpProcessRequestHeaderStyle header_style;
 };
 
 }  // namespace sawtooth

@@ -32,7 +32,7 @@ class GlobalStateImpl: public GlobalState {
     // be provided to transaction handlers when a transaction is being
     // processed.
     explicit GlobalStateImpl(const MessageStreamPtr& message_stream,
-        const std::string& context_id);
+        const std::string& context_id, ::google::protobuf::uint64 tip);
     virtual ~GlobalStateImpl() {}
 
     // Retrieve a single value from global state. If you are retrieving
@@ -69,7 +69,13 @@ class GlobalStateImpl: public GlobalState {
     void AddEvent(const std::string& event_type ,
        const std::vector<KeyValue>& kv_pairs, const std::string& event_data) const;
 
- private:
+    virtual ::google::protobuf::uint64 GetTip() const;
+
+    virtual void GetStatesByPrefix(const std::string& address, std::string* root, std::vector<KeyValue>* out_values) const;
+    virtual void GetSigByNum(::google::protobuf::uint64 num, std::string* sig_out) const;
+
+private:
+    ::google::protobuf::uint64 tip;
     std::string context_id;
     MessageStreamPtr message_stream;
 };

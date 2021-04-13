@@ -54,12 +54,8 @@ typedef std::shared_ptr<TransactionHeader> TransactionHeaderPtr;
 // The transaction data for a Transaction Processing request.
 class Transaction final {
  public:
-    Transaction(
-            TransactionHeaderPtr header,
-            StringPtr payload,
-            StringPtr signature,
-            StringPtr header_bytes
-    ): header_(header), payload_(payload), signature_(signature), header_bytes_(header_bytes) {
+    Transaction(TransactionHeaderPtr header, StringPtr payload, StringPtr signature):
+            header_(header), payload_(payload), signature_(signature) {
     }
 
     Transaction (const Transaction&) = delete;
@@ -78,15 +74,10 @@ class Transaction final {
         return *(this->signature_);
     }
 
-    const std::string& header_bytes() const {
-        return *(this->header_bytes_);
-    }
-
  private:
     TransactionHeaderPtr header_;
     StringPtr payload_;
     StringPtr signature_;
-    StringPtr header_bytes_;
 };
 typedef std::unique_ptr<Transaction> TransactionUPtr;
 
@@ -133,6 +124,10 @@ class GlobalState {
     virtual void AddEvent(const std::string& event_type,
        const std::vector<KeyValue>& kv_pairs, const std::string& event_data) const = 0;
 
+    virtual ::google::protobuf::uint64 GetTip() const = 0;
+
+    virtual void GetStatesByPrefix(const std::string& address, std::string* root, std::vector<KeyValue>* out_values) const = 0;
+    virtual void GetSigByNum(::google::protobuf::uint64 num, std::string* sig_out) const = 0;
 };
 typedef std::shared_ptr<GlobalState> GlobalStatePtr;
 typedef std::unique_ptr<GlobalState> GlobalStateUPtr;
@@ -193,12 +188,6 @@ typedef std::unique_ptr<TransactionHandler> TransactionHandlerUPtr;
 typedef std::shared_ptr<TransactionHandler> TransactionHandlerPtr;
 
 
-// Used to set the transaction request header style
-enum TpRequestHeaderStyle {
-    HeaderStyleUnset = 1,
-    HeaderStyleExpanded,
-    HeaderStyleRaw
-};
 
 class TransactionProcessor {
 public:
@@ -209,12 +198,11 @@ public:
     // before run is called.
     virtual void RegisterHandler(TransactionHandlerUPtr handler) = 0;
 
-    // Sets the TpProcessRequest header style, default set to EXPANDED
-    virtual void SetHeaderStyle(TpRequestHeaderStyle style) = 0;
-
     // The main entry point for the TransactionProcessor. It will not return
     // until the TransactionProcessor shuts down.
     virtual void Run() = 0;
+
+    virtual sawtooth::GlobalStateUPtr CreateContextlessGlobalState() = 0;
 
     static TransactionProcessor* Create(const std::string& connection_string);
 };

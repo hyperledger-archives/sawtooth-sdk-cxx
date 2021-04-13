@@ -22,11 +22,13 @@
 #include <log4cxx/logger.h>
 #include <zmqpp/zmqpp.hpp>
 
+#undef ERROR
 #include "proto/processor.pb.h"
 #include "proto/transaction.pb.h"
 
 #include "exceptions.h"
 #include "sawtooth/transaction_processor.h"
+#include <signal.h>
 
 namespace sawtooth {
 
@@ -43,12 +45,14 @@ static void s_signal_handler (int signal_value) {
 
 static void s_catch_signals (void) {
     if (!s_interrupt_initialized) {
-        struct sigaction action;
-        action.sa_handler = s_signal_handler;
-        action.sa_flags = 0;
-        sigemptyset (&action.sa_mask);
-        sigaction (SIGINT, &action, NULL);
-        sigaction (SIGTERM, &action, NULL);
+        //struct sigaction action;
+        //action.sa_handler = s_signal_handler;
+        //action.sa_flags = 0;
+        //sigemptyset (&action.sa_mask);
+        //sigaction (SIGINT, &action, NULL);
+        //sigaction (SIGTERM, &action, NULL);
+        signal(SIGINT, &s_signal_handler);
+        signal(SIGTERM, &s_signal_handler);
         s_interrupt_initialized = true;
 
         LOG4CXX_ERROR(logger, "signal handler initialized");
@@ -61,8 +65,6 @@ static void s_catch_signals (void) {
 TransactionProcessorImpl::TransactionProcessorImpl(
         const std::string& connection_string):
         connection_string(connection_string), run(true) {
-    this->highest_sdk_feature_requested = FeatureVersion::FeatureUnused;
-    this->header_style = TpRegisterRequest_TpProcessRequestHeaderStyle_HEADER_STYLE_UNSET;
 }
 
 TransactionProcessorImpl::~TransactionProcessorImpl() {}
@@ -75,33 +77,11 @@ void TransactionProcessorImpl::RegisterHandler(TransactionHandlerUPtr handler) {
     this->handlers[name] = sptr;
 }
 
-// Sets a flag to request the validator for custom transaction header style
-// in TpProcessRequest
-void TransactionProcessorImpl::SetHeaderStyle(TpRequestHeaderStyle style) {
-    TpRegisterRequest_TpProcessRequestHeaderStyle preferred =
-            TpRegisterRequest_TpProcessRequestHeaderStyle_HEADER_STYLE_UNSET;
-    switch (style) {
-        case HeaderStyleExpanded:
-            preferred = TpRegisterRequest_TpProcessRequestHeaderStyle_EXPANDED;
-            break;
-
-        case HeaderStyleRaw:
-            preferred = TpRegisterRequest_TpProcessRequestHeaderStyle_RAW;
-            break;
-    }
-    this->header_style = preferred;
-    if (FeatureVersion::FeatureCustomHeaderStyle > this->highest_sdk_feature_requested) {
-        this->highest_sdk_feature_requested = FeatureVersion::FeatureCustomHeaderStyle;
-    }
-}
-
 void TransactionProcessorImpl::Register() {
     for (auto handler : this->handlers) {
         LOG4CXX_DEBUG(logger, "TransactionProcessor::Register: "
             << handler.first);
         auto versions = handler.second->versions();
-        const unsigned int protocol_version =
-                FeatureVersionToUnsignedInt(this->highest_sdk_feature_requested);
 
         for (auto version : versions) {
             LOG4CXX_DEBUG(logger, "Register Handler: "
@@ -110,11 +90,9 @@ void TransactionProcessorImpl::Register() {
             TpRegisterRequest request;
             request.set_family(handler.second->transaction_family_name());
             request.set_version(version);
-            request.set_protocol_version(protocol_version);
             for (auto namesp : handler.second->namespaces()) {
                 request.add_namespaces(namesp);
             }
-            request.set_request_header_style(this->header_style);
             FutureMessagePtr future = this->response_stream->SendMessage(
                     Message_MessageType_TP_REGISTER_REQUEST, request);
             TpRegisterResponse response;
@@ -124,13 +102,7 @@ void TransactionProcessorImpl::Register() {
             if (response.status() != TpRegisterResponse::OK) {
                 LOG4CXX_ERROR(logger, "Register failed, status code: "
                     << response.status());
-                throw std::runtime_error("Registration failed");
-            }
-            if (response.protocol_version() != protocol_version) {
-                LOG4CXX_ERROR(logger, "Validator version " << response.protocol_version()
-                    << " does not support requested feature by SDK version "
-                    << protocol_version << ". Unregistering with the validator");
-                throw std::runtime_error("Registration reversed");
+                throw std::runtime_error("Registation failed");
             }
         }
     }
@@ -153,6 +125,10 @@ void TransactionProcessorImpl::UnRegister() {
     }
 }
 
+sawtooth::GlobalStateUPtr TransactionProcessorImpl::CreateContextlessGlobalState() {
+    GlobalStateUPtr global_state(new GlobalStateImpl(this->message_dispatcher.CreateStream(), "", -1));
+    return std::move(global_state);
+}
 
 void TransactionProcessorImpl::HandleProcessingRequest(const void* msg,
         size_t msg_size,
@@ -168,12 +144,10 @@ void TransactionProcessorImpl::HandleProcessingRequest(const void* msg,
 
         StringPtr payload_data(request.release_payload());
         StringPtr signature_data(request.release_signature());
-        StringPtr header_bytes(request.release_header_bytes());
 
         TransactionUPtr txn(new Transaction(txnHeaderPtr,
             payload_data,
-            signature_data,
-            header_bytes));
+            signature_data));
 
         auto iter = this->handlers.find(family);
         if (iter != this->handlers.end()) {
@@ -181,7 +155,7 @@ void TransactionProcessorImpl::HandleProcessingRequest(const void* msg,
                 GlobalStateUPtr global_state(
                     new GlobalStateImpl(
                         this->message_dispatcher.CreateStream(),
-                        request.context_id()));
+                        request.context_id(), request.tip()));
 
                 TransactionApplicatorUPtr applicator = iter->second->GetApplicator(
                         std::move(txn),
