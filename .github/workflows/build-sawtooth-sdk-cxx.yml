@@ -1,0 +1,23 @@
+name: Sawtooth SDK Cxx CI
+
+on:
+  push:
+    branches: [ dev, master ]
+  pull_request:
+    branches: [ dev, master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: docker/build-push-action@v2
+      with:
+        tags: sawtooth-sdk-cxx-local:latest
+        push: false
+    - uses: addnab/docker-run-action@v3
+      with:
+        image: sawtooth-sdk-cxx-local:latest
+        options: -v ${{ github.workspace }}:/project/sawtooth-sdk-cxx
