@@ -20,5 +20,5 @@ jobs:
     - uses: addnab/docker-run-action@v3
       with:
         image: sawtooth-sdk-cxx-local:latest
-        options: -v $(pwd):/project/sawtooth-sdk-cxx
+        options: -v ${{ github.workspace }}:/project/sawtooth-sdk-cxx
         run: build_cxx
