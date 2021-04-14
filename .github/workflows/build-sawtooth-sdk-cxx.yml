@@ -12,6 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Set environment variables
+      run: |
+        echo 'CPACK_PACKAGE_VERSION=0.0.1' >> $GITHUB_ENV
+        echo 'CPACK_DEBIAN_PACKAGE_VERSION=0.0.1' >> $GITHUB_ENV
     - uses: actions/checkout@v2
     - uses: docker/build-push-action@v2
       with:
