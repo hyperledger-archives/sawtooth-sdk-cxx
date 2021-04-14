@@ -17,7 +17,7 @@ jobs:
       with:
         tags: sawtooth-sdk-cxx-local:latest
         push: false
-    - uses: addnab/docker-run-action@v
+    - uses: addnab/docker-run-action@v3
       with:
         image: sawtooth-sdk-cxx-local:latest
         options: -v $(pwd):/project/sawtooth-sdk-cxx
