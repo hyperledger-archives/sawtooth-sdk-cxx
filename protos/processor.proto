@@ -84,6 +84,7 @@ message TpProcessRequest {
     string signature = 3;  // The transaction header_signature
     string context_id = 4; // The context_id for state requests.
     uint64 tip = 5; // The block number
+    string block_signature = 6;
 }
 
 

@@ -144,10 +144,16 @@ void TransactionProcessorImpl::HandleProcessingRequest(const void* msg,
 
         StringPtr payload_data(request.release_payload());
         StringPtr signature_data(request.release_signature());
+        auto bs = request.release_block_signature();
+        StringPtr block_signature_data(bs);
+        if (bs == nullptr) {
+            block_signature_data = StringPtr{new std::string()};
+        }
 
         TransactionUPtr txn(new Transaction(txnHeaderPtr,
             payload_data,
-            signature_data));
+            signature_data,
+            block_signature_data));
 
         auto iter = this->handlers.find(family);
         if (iter != this->handlers.end()) {

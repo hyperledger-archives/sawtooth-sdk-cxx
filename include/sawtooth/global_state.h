@@ -73,11 +73,14 @@ class GlobalStateImpl: public GlobalState {
 
     virtual void GetStatesByPrefix(const std::string& address, std::string* root, std::vector<KeyValue>* out_values) const;
     virtual void GetSigByNum(::google::protobuf::uint64 num, std::string* sig_out) const;
+    virtual void GetBlockById(const std::string& block_id, BlockInfo* header_out) const;
+    virtual void GetRewardBlockSignatures(const std::string& block_id, std::vector<std::string> &signatures, ::google::protobuf::uint64 first_pred, ::google::protobuf::uint64 last_pred) const;
 
 private:
     ::google::protobuf::uint64 tip;
     std::string context_id;
     MessageStreamPtr message_stream;
+    std::string block_signature;
 };
 
 }  // namespace sawtooth

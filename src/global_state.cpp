@@ -23,9 +23,14 @@
 #include "proto/client_state.pb.h"
 #include "proto/client_block.pb.h"
 #include "proto/events.pb.h"
+#include "proto/block.pb.h"
 
 #include "sawtooth/global_state.h"
 #include "exceptions.h"
+#include "sawtooth/message_stream.h"
+#include "sawtooth_sdk.h"
+#include "sawtooth/future_message.h"
+#include "sawtooth/message_dispatcher.h"
 #undef ERROR
 
 namespace sawtooth {
@@ -142,8 +147,66 @@ void GlobalStateImpl::GetSigByNum(::google::protobuf::uint64 num, std::string* s
     auto const& header_str = response.block().header();
     BlockHeader header;
     header.ParseFromString(header_str);
+    header.block_num();
 
     *sig_out = header.signer_public_key();
+}
+
+void GlobalStateImpl::GetBlockById(const std::string& block_id, BlockInfo* header_out) const {
+    assert(header_out != nullptr);
+
+    ClientBlockGetByIdRequest request;
+    ClientBlockGetResponse response;
+
+    request.set_block_id(block_id);
+
+    FutureMessagePtr future = this->message_stream->SendMessage(
+        Message::CLIENT_BLOCK_GET_BY_ID_REQUEST, request);
+    future->GetMessage(Message::CLIENT_BLOCK_GET_RESPONSE, &response);
+
+    if (response.status() != ClientBlockGetResponse::OK) {
+        std::stringstream error;
+        error << "Failed to retrieve block by ID";
+        throw sawtooth::InvalidTransaction(error.str());
+    }
+
+    auto const& block = response.block();
+    auto const& header_str = block.header();
+    BlockHeader header;
+    header.ParseFromString(header_str);
+    BlockInfo info = BlockInfo(header.block_num(), block.header_signature(),  header.previous_block_id(), header.signer_public_key());
+    *header_out = std::move(info);
+}
+
+
+void GlobalStateImpl::GetRewardBlockSignatures(const std::string& block_id, std::vector<std::string> &signatures, ::google::protobuf::uint64 first_pred, ::google::protobuf::uint64 last_pred) const {
+
+    ClientRewardBlockListRequest request;
+    ClientRewardBlockListResponse response;
+
+    request.set_head_id(block_id);
+    request.set_first_predecessor_height(first_pred);
+    request.set_last_predecessor_height(last_pred);
+
+
+    FutureMessagePtr future = this->message_stream->SendMessage(
+        Message::CLIENT_REWARD_BLOCK_LIST_REQUEST, request);
+    future->GetMessage(Message::CLIENT_REWARD_BLOCK_LIST_RESPONSE, &response);
+
+    if (response.status() != ClientRewardBlockListResponse::OK) {
+        std::stringstream error;
+        error << "Failed to retrieve Reward Block List";
+
+        throw sawtooth::InvalidTransaction(error.str());
+    }
+    
+    auto const& blocks = response.blocks();
+    for(auto block : blocks){
+        auto const& header_str = block.header();
+        BlockHeader header;
+        header.ParseFromString(header_str);
+        signatures.push_back(header.signer_public_key());
+    }
 }
 
 void GlobalStateImpl::SetState(const std::string& address, const std::string& value) const {
