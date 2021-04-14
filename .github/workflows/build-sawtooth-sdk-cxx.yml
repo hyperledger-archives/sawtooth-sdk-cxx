@@ -2,9 +2,9 @@ name: Sawtooth SDK Cxx CI
 
 on:
   push:
-    branches: [ master, feature/build ]
+    branches: [ dev, master ]
   pull_request:
-    branches: [ master, feature/build ]
+    branches: [ dev, master ]
 
 jobs:
   build:
