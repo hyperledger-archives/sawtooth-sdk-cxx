@@ -97,7 +97,7 @@ void GlobalStateImpl::GetStatesByPrefix(const std::string& address, std::string*
     ClientStateListRequest request;
     ClientStateListResponse response;
 
-    request.set_state_root(root->empty()? "": root->c_str());
+    request.set_state_root(*root);
     request.set_address(address);
 
     FutureMessagePtr future = this->message_stream->SendMessage(
@@ -111,7 +111,7 @@ void GlobalStateImpl::GetStatesByPrefix(const std::string& address, std::string*
 
     if (response.status() != ClientStateListResponse::OK) {
         std::stringstream error;
-        error << "Failed to retrieve states by prefix";
+        error << "Failed to retrieve states by prefix " << response.status();
         throw sawtooth::InvalidTransaction(error.str());
     }
 
