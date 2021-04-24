@@ -115,7 +115,7 @@ void GlobalStateImpl::GetStatesByPrefix(const std::string& address, std::string*
         throw sawtooth::InvalidTransaction(error.str());
     }
 
-    *root = response.paging().next();
+    *root = response.state_root();
     int num = response.entries_size();
     out_values->resize(num);
 
