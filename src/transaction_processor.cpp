@@ -51,7 +51,7 @@ static void s_catch_signals (void) {
         sigaction (SIGTERM, &action, NULL);
         s_interrupt_initialized = true;
 
-        LOG4CXX_ERROR(logger, "signal handler initialized");
+        LOG4CXX_DEBUG(logger, "signal handler initialized");
     } else {
         LOG4CXX_ERROR(logger, "signal handler already initialized");
     }
