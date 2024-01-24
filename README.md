@@ -1,21 +1,18 @@
-![Hyperledger Sawtooth](https://raw.githubusercontent.com/hyperledger/sawtooth-core/master/images/sawtooth_logo_light_blue-small.png)
+# Hyperledger Sawtooth
 
-# Hyperledger Sawtooth SDK
+This project has moved (see below).
 
-*Hyperledger Sawtooth* is an enterprise solution for building, deploying, and
-running distributed ledgers (also called blockchains). It provides an
-extremely modular and flexible platform for implementing transaction-based
-updates to shared state between untrusted parties coordinated by consensus
-algorithms.
+Hyperledger Sawtooth was a project to provide an enterprise solution for
+building, deploying, and running distributed ledgers (also called blockchains).
 
-The *Sawtooth CXX SDK* provides a number of useful components that simplify
-developing CXX applications which interface with the Sawtooth platform.
-For full usage and installation instructions please reference the
-official Sawtooth documentation below:
+# Project Status
 
-  * [Hyperledger Sawtooth Official Documentation](https://sawtooth.hyperledger.org/docs/)
-  * [Sawtooth Application Developer's Guide](https://sawtooth.hyperledger.org/docs/core/releases/latest/app_developers_guide.html)
+This Hyperledger project, Hyperledger Sawtooth, has been archived and is no
+longer active within Hyperledger.
 
-## Contributors
+Sawtooth is now maintained by the Splinter community. For more information,
+visit: https://github.com/splintercommunity/sawtooth-core/
 
-Instructions for build can be found in [BUILD.md](./BUILD.md)
+# License
+
+Hyperledger Sawtooth software is licensed under the [Apache License Version 2.0](LICENSE) software license.
